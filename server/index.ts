@@ -24,7 +24,14 @@ const yf = new (_YahooFinance as any)({ suppressNotices: ['yahooSurvey'] }) as t
 const app  = express();
 const PORT = Number(process.env.PORT ?? 3001);
 
-app.use(cors({ origin: /localhost/ }));
+app.use(cors({
+  origin: (origin, cb) => {
+    // Allow requests with no origin (curl, Postman, same-origin SSR)
+    if (!origin) return cb(null, true);
+    if (/localhost/.test(origin) || /\.vercel\.app$/.test(origin)) return cb(null, true);
+    cb(new Error(`CORS: blocked origin ${origin}`));
+  },
+}));
 
 // ── In-memory cache ───────────────────────────────────────────────────────────
 

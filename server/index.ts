@@ -19,7 +19,16 @@ import _YahooFinance from 'yahoo-finance2';
 // object IS a class. Cast via any to construct it, then re-cast to the proper
 // type so method calls (quote, chart, …) are still fully typed.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const yf = new (_YahooFinance as any)({ suppressNotices: ['yahooSurvey'] }) as typeof _YahooFinance;
+const yf = new (_YahooFinance as any)({
+  suppressNotices: ['yahooSurvey'],
+  fetchOptions: {
+    headers: {
+      'User-Agent':      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+    },
+  },
+}) as typeof _YahooFinance;
 
 const app  = express();
 const PORT = Number(process.env.PORT ?? 3001);

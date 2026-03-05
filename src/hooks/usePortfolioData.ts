@@ -7,7 +7,7 @@ import {
   type Quote,
   type PriceChange,
   type HistoricalDay,
-} from '../api/yahoo';
+} from '../api/twelvedata';
 
 // ── Static portfolio configuration ───────────────────────────────────────────
 
@@ -113,7 +113,7 @@ function holdingsFromAPI(
 }
 
 /**
- * Converts Yahoo Finance daily EOD data into portfolio-equivalent monthly values starting
+ * Converts Twelvedata daily EOD data into portfolio-equivalent monthly values starting
  * at INITIAL_INVESTMENT. Picks the last trading day of each month and uses
  * Dec of the prior year as the base (= 0 % YTD).
  */

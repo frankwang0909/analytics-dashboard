@@ -120,7 +120,7 @@ function NoApiKeyState() {
     <div className="flex flex-col items-center justify-center py-24 text-center">
       <p className="text-lg font-semibold text-gray-800 mb-2">Local server not running</p>
       <p className="text-sm text-gray-400 mb-4 max-w-sm">
-        Start the Yahoo Finance proxy server, then set{" "}
+        Start the Twelvedata proxy server, then set{" "}
         <code className="bg-gray-100 px-1 rounded">.env.local</code>:
       </p>
       <code className="bg-gray-100 text-gray-700 text-sm px-4 py-2 rounded-lg font-mono">
@@ -139,7 +139,7 @@ export default function App() {
         <div>
           <h1 className="text-xl font-bold text-gray-900">Portfolio Analytics</h1>
           <p className="text-xs text-gray-400 mt-0.5">
-            Live portfolio analytics · Yahoo Finance · Fiscal year 2025
+            Live portfolio analytics · Twelvedata · Fiscal year 2025
           </p>
         </div>
         <nav className="flex gap-2">

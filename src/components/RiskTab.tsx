@@ -19,7 +19,7 @@ export default function RiskTab({ riskMetrics, summary }: Props) {
     { label: "Portfolio Beta",        value: hasHistory ? summary.beta               : na, note: "Below-market sensitivity",   good: true  },
     { label: "Sharpe Ratio",          value: hasHistory ? summary.sharpeRatio        : na, note: "vs ~0.18 S&P 500",           good: true  },
     { label: "Max Drawdown",          value: hasHistory ? `${summary.maxDrawdown}%`  : na, note: "Calendar year peak-to-trough", good: false },
-    { label: "Win Rate (monthly)",    value: hasHistory ? `${summary.winRate}%`      : na, note: positiveMonths != null ? `${positiveMonths} of 12 months positive` : "Requires Yahoo Finance server", good: true  },
+    { label: "Win Rate (monthly)",    value: hasHistory ? `${summary.winRate}%`      : na, note: positiveMonths != null ? `${positiveMonths} of 12 months positive` : "Requires Twelvedata server", good: true  },
   ];
 
   return (
@@ -29,7 +29,7 @@ export default function RiskTab({ riskMetrics, summary }: Props) {
         <p className="text-xs text-gray-400 mb-4">
           {hasHistory
             ? `Max drawdown: ${summary.maxDrawdown}% (calendar year peak-to-trough)`
-            : "Requires Yahoo Finance server for historical data"}
+            : "Requires Twelvedata server for historical data"}
         </p>
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={riskMetrics}>

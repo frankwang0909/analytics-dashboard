@@ -1,6 +1,6 @@
 # Portfolio Analytics Dashboard
 
-A responsive investment portfolio dashboard built with React 19, TypeScript, and Tailwind CSS. Tracks 2025 full-year performance against three major US indices with interactive charts, filtering, and sorting. Live market data is sourced from Yahoo Finance via a local Node.js proxy server.
+A responsive investment portfolio dashboard built with React 19, TypeScript, and Tailwind CSS. Tracks 2025 full-year performance against three major US indices with interactive charts, filtering, and sorting. Live market data is sourced from [Twelvedata](https://twelvedata.com) via a local Node.js proxy server.
 
 ![Overview Tab](./docs/screenshot-overview.png)
 ![Risk Tab](./docs/screenshot-risk.png)
@@ -9,7 +9,7 @@ A responsive investment portfolio dashboard built with React 19, TypeScript, and
 ## Features
 
 - **Multi-tab layout** — Overview, Risk, and Holdings views
-- **Live market data** — Real-time quotes and historical prices via Yahoo Finance
+- **Live market data** — Real-time quotes and historical prices via Twelvedata
 - **Three benchmark comparisons** — Portfolio vs S&P 500, NASDAQ, and Dow Jones (YTD line chart)
 - **Interactive sector chart** — Filter by All / Gainers / Losers; Y-axis auto-scales per filter (gainers start from 0, losers end at 0)
 - **Sortable holdings table** — Click any column header to sort; filter by gainers/losers
@@ -27,14 +27,14 @@ A responsive investment portfolio dashboard built with React 19, TypeScript, and
 | Routing | React Router v7 |
 | Bundler | Vite 7 |
 | Tests | Vitest + Testing Library |
-| Backend | Node.js + Express + yahoo-finance2 v3 |
+| Backend | Node.js + Express + Twelvedata REST API |
 
 ## Project Structure
 
 ```
 ├── src/
 │   ├── api/
-│   │   └── yahoo.ts            # HTTP client for the local proxy server
+│   │   └── twelvedata.ts       # HTTP client for the local proxy server
 │   ├── components/
 │   │   ├── CustomTooltip.tsx   # Typed recharts tooltip
 │   │   ├── ErrorBoundary.tsx   # Class-based error boundary
@@ -48,12 +48,13 @@ A responsive investment portfolio dashboard built with React 19, TypeScript, and
 │   └── App.tsx                 # Root layout, routing, error boundary
 └── server/
     ├── index.ts                # Express proxy: /api/quotes, /api/price-changes, /api/history
+    ├── cache.json              # Auto-generated disk cache (gitignored)
     └── package.json
 ```
 
 ## Getting Started
 
-**Prerequisites:** Node.js 18+
+**Prerequisites:** Node.js 18+, a free [Twelvedata API key](https://twelvedata.com)
 
 ### 1. Install frontend dependencies
 
@@ -61,7 +62,15 @@ A responsive investment portfolio dashboard built with React 19, TypeScript, and
 npm install
 ```
 
-### 2. Start the Yahoo Finance proxy server
+### 2. Configure the Twelvedata proxy server
+
+Create `server/.env`:
+
+```
+TWELVEDATA_API_KEY=your_api_key_here
+```
+
+### 3. Start the proxy server
 
 ```bash
 # In a separate terminal
@@ -74,9 +83,9 @@ The server starts at `http://localhost:3001` and exposes three endpoints:
 |----------|-------------|
 | `GET /api/quotes?tickers=BND,VTI,...` | Current price + 1-day change |
 | `GET /api/price-changes?tickers=BND,VTI,...` | YTD / 1Y / 6M / 3M / 1M / 5D / 1D returns |
-| `GET /api/history?ticker=SPY&from=2024-12-01&to=2025-12-31` | Daily OHLC + adjusted close |
+| `GET /api/history?ticker=SPY&from=2024-12-01&to=2025-12-31` | Daily close prices |
 
-### 3. Configure the frontend
+### 4. Configure the frontend
 
 Create `.env.local` in the project root:
 
@@ -84,7 +93,7 @@ Create `.env.local` in the project root:
 VITE_API_BASE=http://localhost:3001
 ```
 
-### 4. Start the frontend
+### 5. Start the frontend
 
 ```bash
 npm run dev      # http://localhost:5173
@@ -107,20 +116,21 @@ npm run build    # Production build
 
 ```
 Browser → usePortfolioData (React Query)
-        → src/api/yahoo.ts (fetch)
+        → src/api/twelvedata.ts (fetch)
         → localhost:3001 (Express proxy)
-        → Yahoo Finance API (yahoo-finance2 v3)
+        → Twelvedata REST API
 ```
 
 ### Rate limiting & caching
 
-Yahoo Finance enforces aggressive rate limits. The proxy handles this with:
+Twelvedata free tier allows 8 requests/minute. The proxy handles this with two layers:
 
-- **In-memory cache** — quotes: 5 min TTL; historical data: 4 hr TTL
-- **Serial request queue** — all Yahoo Finance calls are serialized with an 800 ms gap between requests
-- **Automatic retry** — rate-limited requests (429) are retried up to 3 times with exponential backoff
+- **Disk cache** — historical data is written to `server/cache.json` with a 24-hour TTL; data survives server restarts and is loaded instantly on startup
+- **In-memory cache** — quotes: 5 min TTL; historical data: 24 hr TTL (mirrors disk TTL)
+- **Serial request queue** — all Twelvedata calls are serialized with an 8 s gap between requests, staying safely within the 8 req/min limit
+- **Automatic retry** — rate-limited requests (429) are retried up to 3 times with backoff
 
-On first page load, all data is fetched serially (~20 s for the full dataset). Subsequent loads within the TTL window are served from cache instantly.
+On first cold start, all data is fetched serially (~3–4 min for the full dataset). After that, data is served from disk cache for 24 hours with zero Twelvedata calls.
 
 ### `usePortfolioData` hook
 

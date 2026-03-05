@@ -93,14 +93,14 @@ export default function OverviewTab({ monthlyPerformance, assetAllocation, secto
           <h2 className="text-sm font-semibold text-gray-700">Portfolio vs Benchmarks (YTD 2025)</h2>
           {!hasPortfolioData && hasBenchmarkData && (
             <span className="text-xs text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full">
-              Portfolio history requires Yahoo Finance server
+              Portfolio history requires Twelvedata server
             </span>
           )}
         </div>
 
         {!hasBenchmarkData ? (
           <div className="flex items-center justify-center h-64 text-sm text-gray-400">
-            Historical data requires Yahoo Finance server
+            Historical data requires Twelvedata server
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={270}>
@@ -222,7 +222,7 @@ export default function OverviewTab({ monthlyPerformance, assetAllocation, secto
         </div>
         {sectorPerformance.length === 0 ? (
           <div className="flex items-center justify-center h-48 text-sm text-gray-400">
-            Sector data requires Yahoo Finance server
+            Sector data requires Twelvedata server
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={300}>

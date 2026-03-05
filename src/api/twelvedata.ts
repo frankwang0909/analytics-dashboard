@@ -1,9 +1,9 @@
 /**
  * HTTP client for the local Express proxy server (server/index.ts).
- * The server fetches data from Yahoo Finance via yahoo-finance2.
+ * The server fetches data from Twelvedata (twelvedata.com).
  *
  * Set VITE_API_BASE in .env.local to point at the running server.
- * Without it the app falls back to built-in sample data automatically.
+ * Without it the app shows a setup prompt (no data is fetched).
  */
 
 const BASE = import.meta.env.VITE_API_BASE as string | undefined ?? 'http://localhost:3001';

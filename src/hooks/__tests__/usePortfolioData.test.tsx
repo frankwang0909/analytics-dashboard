@@ -2,9 +2,9 @@ import React from 'react';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { usePortfolioData } from '../usePortfolioData';
-import * as yahoo from '../../api/yahoo';
+import * as td from '../../api/twelvedata';
 
-vi.mock('../../api/yahoo', () => ({
+vi.mock('../../api/twelvedata', () => ({
   fetchBatchQuotes:   vi.fn(),
   fetchPriceChanges:  vi.fn(),
   fetchHistoricalEOD: vi.fn(),
@@ -14,7 +14,7 @@ const setApiKey = (key: string | undefined) => {
   vi.stubEnv('VITE_API_BASE', key ?? '');
 };
 
-const MOCK_QUOTES: yahoo.Quote[] = [
+const MOCK_QUOTES: td.Quote[] = [
   { symbol: 'BND',  name: 'Vanguard Total Bond ETF',   price: 73.5,  changesPercentage: 0.1  },
   { symbol: 'VTI',  name: 'Vanguard Total Market ETF', price: 250.0, changesPercentage: 0.2  },
   { symbol: 'IEFA', name: 'iShares MSCI EAFE',         price: 72.0,  changesPercentage: 0.3  },
@@ -25,13 +25,13 @@ const MOCK_QUOTES: yahoo.Quote[] = [
   { symbol: 'NVDA', name: 'NVIDIA Corp.',              price: 880.0, changesPercentage:  1.2 },
 ];
 
-const MOCK_CHANGES: yahoo.PriceChange[] = MOCK_QUOTES.map(q => ({
+const MOCK_CHANGES: td.PriceChange[] = MOCK_QUOTES.map(q => ({
   symbol: q.symbol,
   ytd: q.symbol === 'AAPL' ? -6.3 : q.symbol === 'VNQ' ? -2.8 : 8.0,
   '1Y': 10, '6M': 5, '3M': 3, '1M': 1, '5D': 0.5, '1D': 0.1,
 }));
 
-const MOCK_SECTOR_CHANGES: yahoo.PriceChange[] = [
+const MOCK_SECTOR_CHANGES: td.PriceChange[] = [
   { symbol: 'XLK',  ytd: 1.4,  '1Y': 10, '6M': 5, '3M': 3, '1M': 1, '5D': 0.5, '1D': 0.1 },
   { symbol: 'XLF',  ytd: 8.4,  '1Y': 10, '6M': 5, '3M': 3, '1M': 1, '5D': 0.5, '1D': 0.1 },
   { symbol: 'XLC',  ytd: 7.6,  '1Y': 10, '6M': 5, '3M': 3, '1M': 1, '5D': 0.5, '1D': 0.1 },
@@ -43,7 +43,7 @@ const MOCK_SECTOR_CHANGES: yahoo.PriceChange[] = [
 ];
 
 // Single mock history works for all 11 calls (3 benchmarks + 8 holdings).
-const MOCK_HISTORY: yahoo.HistoricalResult = {
+const MOCK_HISTORY: td.HistoricalResult = {
   symbol: 'TEST',
   historical: [
     { date: '2024-12-31', close: 100 },
@@ -76,14 +76,14 @@ describe('usePortfolioData', () => {
     expect(result.current.isPending).toBe(false);
     expect(result.current.isError).toBe(false);
     expect(result.current.data).toBeUndefined();
-    expect(yahoo.fetchBatchQuotes).not.toHaveBeenCalled();
+    expect(td.fetchBatchQuotes).not.toHaveBeenCalled();
   });
 
   it('starts in pending state when API key is configured', () => {
     setApiKey('test-key');
-    vi.mocked(yahoo.fetchBatchQuotes).mockResolvedValue(MOCK_QUOTES);
-    vi.mocked(yahoo.fetchPriceChanges).mockResolvedValue(MOCK_CHANGES);
-    vi.mocked(yahoo.fetchHistoricalEOD).mockResolvedValue(MOCK_HISTORY);
+    vi.mocked(td.fetchBatchQuotes).mockResolvedValue(MOCK_QUOTES);
+    vi.mocked(td.fetchPriceChanges).mockResolvedValue(MOCK_CHANGES);
+    vi.mocked(td.fetchHistoricalEOD).mockResolvedValue(MOCK_HISTORY);
 
     const { result } = renderHook(() => usePortfolioData(), { wrapper: createWrapper() });
     expect(result.current.isPending).toBe(true);
@@ -92,29 +92,29 @@ describe('usePortfolioData', () => {
 
   it('resolves with live data when key is configured', async () => {
     setApiKey('test-key');
-    vi.mocked(yahoo.fetchBatchQuotes).mockResolvedValue(MOCK_QUOTES);
-    vi.mocked(yahoo.fetchPriceChanges).mockImplementation(async (tickers: string[]) =>
+    vi.mocked(td.fetchBatchQuotes).mockResolvedValue(MOCK_QUOTES);
+    vi.mocked(td.fetchPriceChanges).mockImplementation(async (tickers: string[]) =>
       tickers.some(t => SECTOR_TICKERS.includes(t)) ? MOCK_SECTOR_CHANGES : MOCK_CHANGES
     );
-    vi.mocked(yahoo.fetchHistoricalEOD).mockResolvedValue(MOCK_HISTORY);
+    vi.mocked(td.fetchHistoricalEOD).mockResolvedValue(MOCK_HISTORY);
 
     const { result } = renderHook(() => usePortfolioData(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isPending).toBe(false));
 
     expect(result.current.data).toBeDefined();
     expect(result.current.isError).toBe(false);
-    expect(yahoo.fetchBatchQuotes).toHaveBeenCalledOnce();
+    expect(td.fetchBatchQuotes).toHaveBeenCalledOnce();
     // 2 calls: holdings tickers + sector ETF tickers
-    expect(yahoo.fetchPriceChanges).toHaveBeenCalledTimes(2);
+    expect(td.fetchPriceChanges).toHaveBeenCalledTimes(2);
     // 3 benchmarks + 8 holdings = 11 history calls
-    expect(yahoo.fetchHistoricalEOD).toHaveBeenCalledTimes(11);
+    expect(td.fetchHistoricalEOD).toHaveBeenCalledTimes(11);
   });
 
   it('surfaces an error when the API call fails', async () => {
     setApiKey('bad-key');
-    vi.mocked(yahoo.fetchBatchQuotes).mockRejectedValue(new Error('401 Unauthorized'));
-    vi.mocked(yahoo.fetchPriceChanges).mockRejectedValue(new Error('401 Unauthorized'));
-    vi.mocked(yahoo.fetchHistoricalEOD).mockRejectedValue(new Error('401 Unauthorized'));
+    vi.mocked(td.fetchBatchQuotes).mockRejectedValue(new Error('401 Unauthorized'));
+    vi.mocked(td.fetchPriceChanges).mockRejectedValue(new Error('401 Unauthorized'));
+    vi.mocked(td.fetchHistoricalEOD).mockRejectedValue(new Error('401 Unauthorized'));
 
     const { result } = renderHook(() => usePortfolioData(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.isPending).toBe(false));
@@ -125,11 +125,11 @@ describe('usePortfolioData', () => {
 
   it('derives totalValue from holdings YTD returns', async () => {
     setApiKey('test-key');
-    vi.mocked(yahoo.fetchBatchQuotes).mockResolvedValue(MOCK_QUOTES);
-    vi.mocked(yahoo.fetchPriceChanges).mockImplementation(async (tickers: string[]) =>
+    vi.mocked(td.fetchBatchQuotes).mockResolvedValue(MOCK_QUOTES);
+    vi.mocked(td.fetchPriceChanges).mockImplementation(async (tickers: string[]) =>
       tickers.some(t => SECTOR_TICKERS.includes(t)) ? MOCK_SECTOR_CHANGES : MOCK_CHANGES
     );
-    vi.mocked(yahoo.fetchHistoricalEOD).mockResolvedValue(MOCK_HISTORY);
+    vi.mocked(td.fetchHistoricalEOD).mockResolvedValue(MOCK_HISTORY);
 
     const { result } = renderHook(() => usePortfolioData(), { wrapper: createWrapper() });
     await waitFor(() => expect(result.current.data).toBeDefined());
